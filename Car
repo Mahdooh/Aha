@@ -1,0 +1,105 @@
+car-shop/
+├── server.js       # الخادم الرئيسي
+├── package.json    # تفاصيل المشروع
+├── public/         # ملفات الواجهة الأمامية
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+├── routes/         # المسارات
+│   └── cars.js
+├── models/         # النماذج (Model)
+│   └── Car.js
+└── db/             # قاعدة البيانات
+    └── db.js
+{
+  "name": "car-shop",
+  "version": "1.0.0",
+  "description": "موقع إلكتروني لشراء السيارات",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.0.0",
+    "body-parser": "^1.20.2"
+  }
+}
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const carRoutes = require("./routes/cars");
+
+const app = express();
+const PORT = 3000;
+
+// إعداد قاعدة البيانات
+mongoose.connect("mongodb://localhost:27017/carShop", { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("تم الاتصال بقاعدة البيانات"))
+  .catch((err) => console.log("خطأ في الاتصال بقاعدة البيانات:", err));
+
+// إعدادات Express
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+// المسارات
+app.use("/api/cars", carRoutes);
+
+// بدء الخادم
+app.listen(PORT, () => console.log(`الخادم يعمل على http://localhost:${PORT}`));
+const mongoose = require("mongoose");
+
+const carSchema = new mongoose.Schema({
+  name: String,
+  brand: String,
+  price: Number,
+  description: String,
+  imageUrl: String,
+});
+
+module.exports = mongoose.model("Car", carSchema);
+const express = require("express");
+const Car = require("../models/Car");
+const router = express.Router();
+
+// إضافة سيارة جديدة
+router.post("/", async (req, res) => {
+  try {
+    const car = new Car(req.body);
+    await car.save();
+    res.status(201).json(car);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في إنشاء السيارة", error: err });
+  }
+});
+
+// عرض جميع السيارات
+router.get("/", async (req, res) => {
+  try {
+    const cars = await Car.find();
+    res.json(cars);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في جلب السيارات", error: err });
+  }
+});
+
+module.exports = router;
+async function fetchCars() {
+  const response = await fetch("/api/cars");
+  const cars = await response.json();
+  const container = document.getElementById("cars-container");
+
+  cars.forEach(car => {
+    const carDiv = document.createElement("div");
+    carDiv.className = "car";
+    carDiv.innerHTML = `
+      <h3>${car.name}</h3>
+      <p>العلامة التجارية: ${car.brand}</p>
+      <p>السعر: ${car.price} ريال</p>
+      <p>${car.description}</p>
+    `;
+    container.appendChild(carDiv);
+  });
+}
+
+fetchCars();
